@@ -54,12 +54,16 @@ namespace
 std::set<std::string> enabledTransports(
   rclcpp::Node * node, const std::string & image_topic, const PubLoaderPtr & loader)
 {
-  auto ns_len = node->get_effective_namespace().length();
-  std::string param_base_name = image_topic.substr(ns_len);
-  std::replace(param_base_name.begin(), param_base_name.end(), '/', '.');
-  if (param_base_name.front() == '.') {
-    param_base_name = param_base_name.substr(1);
+  // The topic is outside the namespace when it was remapped to an absolute name, so the
+  // namespace is stripped only when it is a prefix of the topic.
+  const std::string ns = node->get_effective_namespace();
+  std::string param_base_name = image_topic;
+  if (ns.size() > 1 && param_base_name.rfind(ns + "/", 0) == 0) {
+    param_base_name.erase(0, ns.size() + 1);
+  } else if (!param_base_name.empty() && param_base_name.front() == '/') {
+    param_base_name.erase(0, 1);
   }
+  std::replace(param_base_name.begin(), param_base_name.end(), '/', '.');
   std::vector<std::string> allowlist_vec;
   std::vector<std::string> all_transport_names;
   for (const auto & lookup_name : loader->getDeclaredClasses()) {

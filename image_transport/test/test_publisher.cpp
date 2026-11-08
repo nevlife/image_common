@@ -88,6 +88,18 @@ TEST_F(TestPublisher, image_transport_camera_publisher_qos) {
   auto pub = it.advertise("camera/image", rmw_qos_profile_sensor_data);
 }
 
+TEST(TestPublisherNamespace, topic_outside_a_longer_namespace) {
+  auto node = rclcpp::Node::make_shared("test_publisher", "/a_namespace_longer_than_topic");
+  auto pub = image_transport::create_publisher(node.get(), "/p");
+  EXPECT_TRUE(node->has_parameter("p.enable_pub_plugins"));
+}
+
+TEST(TestPublisherNamespace, topic_inside_the_namespace) {
+  auto node = rclcpp::Node::make_shared("test_publisher", "/ns");
+  auto pub = image_transport::create_publisher(node.get(), "camera/image");
+  EXPECT_TRUE(node->has_parameter("camera.image.enable_pub_plugins"));
+}
+
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
